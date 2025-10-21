@@ -1,5 +1,7 @@
 ﻿using CustomerApp.Models;
 using Microsoft.AspNetCore.Mvc;
+using FluentValidation;
+using FluentValidation.Results;
 
 namespace CustomerApp.Controllers
 {
@@ -8,10 +10,12 @@ namespace CustomerApp.Controllers
     public class CustomerController : ControllerBase
     {
         private readonly ICustomerProvider _customerProvider;
+        private readonly IValidator<Customer> _updateValidator;
 
         // Dependency Injection ile CustomerProvider'ı alıyotuz. (model binding gibi provider bind ediyoruz gibi düşün)
-        public CustomerController(ICustomerProvider customerProvider) { 
+        public CustomerController(ICustomerProvider customerProvider, IValidator<Customer> updateValidator) { 
             _customerProvider = customerProvider;
+            _updateValidator = updateValidator;
         }
 
         // GET: api/customer/5
@@ -34,7 +38,15 @@ namespace CustomerApp.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateCustomer([FromBody] Customer newCustomer) // - FromBody öğren???
         {
-            // eklenecek müşteriye ait veri geliyor mu kontrol et? *nullcheck
+            // # VALIDATIONS 1. Kontrol: ModelState (Model doğrulama)
+            // ASP.NET Core, newCustomer nesnesini ve üzerindeki [Required] vb.
+            // öznitelikleri otomatik olarak kontrol eder.
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState); // 400 Bad Request ve doğrulama hataları
+            }
+
+            // 2. Kontrol: NULL CHECK (eklenecek müşteriye ait veri geliyor mu kontrol et)
             if (newCustomer == null)
             {
                 return BadRequest("Müşteri verisi boş olamaz.");
@@ -68,7 +80,18 @@ namespace CustomerApp.Controllers
         [HttpPut("{id}")] // [HttpPost("update/{id}")]
         public async Task<IActionResult> UpdateCustomer(int id, [FromBody] Customer updateCustomer)
         {
-            // # VALIDATIONS
+            // 1. ADIM: MANUEL VALİDASYON
+            // Validator'ı manuel olarak ve ASENKRON (async) olarak çağırıyoruz.
+            ValidationResult validationResult = await _updateValidator.ValidateAsync(updateCustomer);
+
+            if (!validationResult.IsValid)
+            {
+                // Hata varsa, 400 BadRequest ile birlikte hata listesini döndür.
+                // ModelState'i kullanmak yerine doğrudan hataları döndürmek daha temizdir.
+                return BadRequest(validationResult.Errors);
+            }
+
+            // 2. Kontrol: NULL CHECK
             if (updateCustomer == null) {
                 return BadRequest("Müşteri bilgisi boş");
             }
@@ -90,7 +113,7 @@ namespace CustomerApp.Controllers
             var affectedRows = await _customerProvider.UpdateCustomerAsync(updateCustomer);
 
             // 2. KONTROL (Güncelleme sonrası kontrol)
-            if (affectedRows == 0)
+            if (affectedRows <= 0)
             {
                 // Bu, 'race condition' durumunda veya veritabanında hiçbir
                 // alan değişmediyse olabilir. Her iki durumda da, kaynağın

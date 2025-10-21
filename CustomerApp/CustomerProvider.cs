@@ -106,5 +106,29 @@ namespace CustomerApp
 
             return affectedRows;
         }
+
+        /**
+         * Email'in başka bir müşteri tarafından kullanılıp kullanılmadığını kontrol eden metot
+         */
+        public async Task<bool> IsEmailTakenAsync(string email, int customerId)
+        {
+            await using var connection = new SqlConnection(_connectionString);
+
+            var parameters = new
+            {
+                Email = email,
+                CustomerID = customerId
+            };
+
+            // ExecuteScalarAsync<bool> ile SP'den dönen
+            // CAST(1 AS BIT) veya CAST(0 AS BIT) değerini yakalıyoruz.
+            var isTaken = await connection.ExecuteScalarAsync<bool>(
+                "sp_CheckEmailExists",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
+
+            return isTaken;
+        }
     }
 }

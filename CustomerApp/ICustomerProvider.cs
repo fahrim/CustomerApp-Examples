@@ -16,5 +16,8 @@ namespace CustomerApp
         Task<int> UpdateCustomerAsync(Customer customer);
 
         Task<int> DeactivateCustomerAsync(int id);
+
+        // Email'in başka bir müşteri tarafından kullanılıp kullanılmadığını kontrol eden metot
+        Task<bool> IsEmailTakenAsync(string email, int customerId);
     }
 }
