@@ -8,16 +8,16 @@ namespace CustomerApp.Models
 
         //[Required(ErrorMessage = "Müşteri adı zorunludur. [MODEL VAL.]")] // Boş olamaz
         //[StringLength(50, ErrorMessage = "Ad en fazla 50 karakter olabilir.")] // Maksimum uzunluk
-        //public string FirstName { get; set; }
+        //public required string FirstName { get; set; }
 
         //[Required(ErrorMessage = "Müşteri soyadı zorunludur.")]
         //[StringLength(50)]
-        //public string LastName { get; set; }
+        //public required string LastName { get; set; }
 
         //[Required(ErrorMessage = "E-posta adresi zorunludur.")]
         //[EmailAddress(ErrorMessage = "Geçerli bir e-posta adresi giriniz.")] // Format kontrolü
         //[StringLength(50)]
-        //public string Email { get; set; }
+        //public required string Email { get; set; }
 
         //[StringLength(20)]
         //public string? PhoneNumber { get; set; }
@@ -35,9 +35,9 @@ namespace CustomerApp.Models
         //public bool IsActive { get; set; }
 
         public int CustomerID { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string Email { get; set; }
+        public required string FirstName { get; set; }
+        public required string LastName { get; set; }
+        public required string Email { get; set; }
         public string? PhoneNumber { get; set; }
         public string? Address { get; set; }
         public string? City { get; set; }
