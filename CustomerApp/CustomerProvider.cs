@@ -37,55 +37,41 @@ namespace CustomerApp
         
 
         // Verileri Kaydedip ID döndüren metot
-        public async Task<int> InsertCustomerAsync(Customer customer)
+        public async Task<int> InsertCustomerAsync(CreateCustomerCommand customerCommand)
         {
             await using var connection = new SqlConnection(_connectionString);
 
-            // SP'miz tüm properyleri istemiyor bu yüzden sadece istediklerini attık
-            var parameters = new
-            {
-                customer.FirstName,
-                customer.LastName,
-                customer.Email,
-                customer.PhoneNumber,
-                customer.Address,
-                customer.City,
-                customer.Country
-            };
+            // 'customerCommand' nesnemiz 'CreatedAt' veya 'IsActive' içermediği için,
+            // onu doğrudan Dapper'a gönderebiliriz.
+            // Dapper, command nesnesindeki (FirstName) property'leri
+            // SP'deki (@FirstName) parametreleriyle otomatik eşleştirecek.
 
             // ExecuteScalarAsync, sorgudan dönen ilk satırın ilk sütunundaki
             // değeri (yani bizim NewCustomerID'mizi) alır.
             var newCustomerId = await connection.ExecuteScalarAsync<int>(
                 "sp_InsertCustomer", // SP adımız
-                parameters, // SP'ye gönderilecek parametreler burada
+                customerCommand, // SP'ye gönderilecek parametreler burada
                 commandType: CommandType.StoredProcedure
             );
 
             return newCustomerId; // Yeni kaydın ID değerini döndürüyoruz.
         }
 
-        public async Task<int> UpdateCustomerAsync(Customer customer)
+        public async Task<int> UpdateCustomerAsync(UpdateCustomerCommand customer)
         {
             await using var connection = new SqlConnection(_connectionString);
 
-            var parameters = new
-            {
-                customer.CustomerID,
-                customer.FirstName,
-                customer.LastName,
-                customer.Email,
-                customer.PhoneNumber,
-                customer.Address,
-                customer.City,
-                customer.Country
-            };
+            // ARTIK 'parameters' ADINDA BİR ANONİM NESNEYE İHTİYACIMIZ YOK!
+            // 'customer' nesnemiz 'CreatedAt' içermediği için,
+            // onu doğrudan Dapper'a gönderebiliriz.
+            // Dapper, 'customer.CustomerID' gibi property'leri
+            // SP'deki '@CustomerID' gibi parametrelerle eşleştirecektir.
 
             // ExecuteAsync, bir sorgu değil, bir komut (UPDATE, DELETE, INSERT) çalıştırmak için kullanılır.
             // Geriye etkilenen satır sayısını (int) döndürür.
             var affectedRows = await connection.ExecuteAsync( // dönüş zaten int olduğu için generic versiyonu hata verdi
                 "sp_UpdateCustomer", // SP adımız
-                // customer, // Customer nesnesini doğrudan gönderebiliriz. - Dapper, property isimlerini (örn: customer.CustomerID). - SP parametreleriyle (@CustomerID) otomatik eşleştirir.
-                parameters, // customer olduğu gibi gönderince createdAt gibi değerleride default olarak gönderiyor ve istemediğimiz güncelleme işlemi oluyor hatta 500 hatası alıyoruz eski tarih nedenyile
+                customer,
                 commandType: CommandType.StoredProcedure
             );
 

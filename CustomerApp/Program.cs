@@ -17,7 +17,7 @@ builder.Services.AddControllers();
 // FluentValidation'a validator'larýn nerede olduðunu söylüyoruz.
 // Bu metot, CustomerValidator ile ayný assembly (proje) içindeki
 // tüm validator sýnýflarýný bulur ve DI için otomatik olarak kaydeder.
-builder.Services.AddValidatorsFromAssemblyContaining<CustomerValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UpdateCustomerCommandValidator>();
 
 // CustomerProvider'ý projenin her yerinde kullanýlabilir hale getiriyoruz.
 // AddScoped: Her bir web isteði için yeni bir CustomerProvider nesnesi oluþturulur.

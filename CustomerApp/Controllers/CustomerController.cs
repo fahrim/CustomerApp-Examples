@@ -12,13 +12,13 @@ namespace CustomerApp.Controllers
     {
         private readonly ICustomerQueryProvider _queryProvider;
         private readonly ICustomerCommandProvider _commandProvider;
-        private readonly IValidator<Customer> _updateValidator;
+        private readonly IValidator<UpdateCustomerCommand> _updateValidator;
 
         // Dependency Injection constructor
         public CustomerController(
             ICustomerQueryProvider queryProvider,
             ICustomerCommandProvider commandProvider,
-            IValidator<Customer> updateValidator) 
+            IValidator<UpdateCustomerCommand> updateValidator) 
         { 
             _queryProvider = queryProvider;
             _commandProvider = commandProvider;
@@ -45,7 +45,7 @@ namespace CustomerApp.Controllers
         // Metodun ANA SORUMLULUĞU YAZMAK'tır (Command), ancak iş akışını (workflow) tamamlamak için Okuma (Query) sağlayıcısını da kullanır.
         // POST: api/customer
         [HttpPost]
-        public async Task<IActionResult> CreateCustomer([FromBody] Customer newCustomer)
+        public async Task<IActionResult> CreateCustomer([FromBody] CreateCustomerCommand newCustomer)
         {
             // # VALIDATIONS 1. Kontrol: ModelState (Model doğrulama)
             // ASP.NET Core, newCustomer nesnesini ve üzerindeki [Required] vb.
@@ -75,21 +75,19 @@ namespace CustomerApp.Controllers
                 return Conflict("Kayıt oluşturuldu ancak tekrar okunamadı.");
             }
 
-            // 201 Created durum kodu ile birlikte
-            // yeni oluşturulan müşterinin "GetCustomerById" endpoint'inin adresini
-            // ve müşterinin kendisini döndür.
-            // - Öğren ???
+            // 201 Created durum kodu ile birlikte yeni oluşturulan müşterinin
+            // "GetCustomerById" endpoint'inin adresini ve müşterinin kendisini döndür.
             return CreatedAtAction( 
                 nameof(GetCustomerById),    // Hangi metot ile çağrılabileceği bilgisi
                 new { id = newCustomerId }, // O metota ait parametreleri
-                createdCustomer                 // yeni oluşturulan veri
+                createdCustomer             // yeni oluşturulan veri
             );
         }
 
         // Metotun ANA SORUMLULUĞU GÜNCELLEMEK'tir (Command), ancak iş akışını (workflow) tamamlamak için Okuma (Query) sağlayıcısını da kullanır.
         // PUT: api/customer/5
         [HttpPut("{id}")] // [HttpPost("update/{id}")]
-        public async Task<IActionResult> UpdateCustomer(int id, [FromBody] Customer updateCustomer)
+        public async Task<IActionResult> UpdateCustomer(int id, [FromBody] UpdateCustomerCommand updateCustomer)
         {
             // 1. ADIM: MANUEL VALİDASYON
             // Validator'ı manuel olarak ve ASENKRON (async) olarak çağırıyoruz.

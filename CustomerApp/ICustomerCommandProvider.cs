@@ -7,8 +7,8 @@ namespace CustomerApp
      */
     public interface ICustomerCommandProvider
     {
-        Task<int> InsertCustomerAsync(Customer customer);
-        Task<int> UpdateCustomerAsync(Customer customer);
+        Task<int> InsertCustomerAsync(CreateCustomerCommand customer);
+        Task<int> UpdateCustomerAsync(UpdateCustomerCommand customer);
         Task<int> DeactivateCustomerAsync(int id);
     }
 }

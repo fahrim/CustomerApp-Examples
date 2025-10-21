@@ -3,12 +3,12 @@ using FluentValidation;
 
 namespace CustomerApp.Validation
 {
-    public class CustomerValidator : AbstractValidator<Customer>
+    public class UpdateCustomerCommandValidator : AbstractValidator<UpdateCustomerCommand>
     {
 
         private readonly ICustomerQueryProvider _queryProvider;
 
-        public CustomerValidator(ICustomerQueryProvider queryProvider, ICustomerCommandProvider commandProvider)
+        public UpdateCustomerCommandValidator(ICustomerQueryProvider queryProvider, ICustomerCommandProvider commandProvider)
         {
             // Gelen providerlar'ı atadık (DI)
             _queryProvider = queryProvider;
@@ -61,7 +61,7 @@ namespace CustomerApp.Validation
             // Validator'a ICustomerProvider'ı inject edip
             // e-postanın unique olup olmadığını KONTROL EDEBİLİRİZ.)
             RuleFor(customer => customer.Email)
-                .MustAsync(async (Customer customer, string email, CancellationToken cancellation) =>
+                .MustAsync(async (UpdateCustomerCommand customer, string email, CancellationToken cancellation) =>
                     !await _queryProvider.IsEmailTakenAsync(email, customer.CustomerID))
                 .WithMessage("Bu e-posta adresi zaten başka bir kullanıcı tarafından kullanılıyor.");
 
@@ -75,7 +75,7 @@ namespace CustomerApp.Validation
         }
 
         // 3. Adım: Async kural metodunu uygula
-        private async Task<bool> BeUniqueEmail(Customer customer, string email, CancellationToken cancellation)
+        private async Task<bool> BeUniqueEmail(UpdateCustomerCommand customer, string email, CancellationToken cancellation)
         {
             // Provider'a sor
             bool isTaken = await _queryProvider.IsEmailTakenAsync(email, customer.CustomerID);
