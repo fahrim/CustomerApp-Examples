@@ -22,12 +22,17 @@ builder.Services.AddValidatorsFromAssemblyContaining<CustomerValidator>();
 // CustomerProvider'ý projenin her yerinde kullanýlabilir hale getiriyoruz.
 // AddScoped: Her bir web isteði için yeni bir CustomerProvider nesnesi oluþturulur.
 
-// ESKÝ HALÝ:
- builder.Services.AddScoped<CustomerProvider>();
+// EN ESKÝ HALÝ (no interface):
+//builder.Services.AddScoped<CustomerProvider>();
+
+// ESKÝ HALÝ: (no Interface Segregation Principle)
+//builder.Services.AddScoped<ICustomerProvider, CustomerProvider>();
 
 // YENÝ HALÝ:
-// "Birisi ICustomerProvider isterse, ona CustomerProvider sýnýfýnýn bir örneðini ver"
-builder.Services.AddScoped<ICustomerProvider, CustomerProvider>();
+// "Birisi ICustomerProvider(Query/Command)[CQRS] isterse, ona CustomerProvider sýnýfýnýn bir örneðini ver"
+// Artýk arayüzler ayrýldý ve arayüzlerin tek bir sorumluluðu var
+builder.Services.AddScoped<ICustomerQueryProvider, CustomerProvider>();
+builder.Services.AddScoped<ICustomerCommandProvider, CustomerProvider>();
 
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

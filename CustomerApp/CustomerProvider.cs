@@ -11,7 +11,7 @@ namespace CustomerApp
      * AI NOTE: Bu sınıf, veritabanıyla konuşma işinin tamamını üstlenecek.
      * Dapper'ı ve sp_GetCustomerByID SP'sini burada kullanacağız.
      */
-    public class CustomerProvider : ICustomerProvider
+    public class CustomerProvider : ICustomerQueryProvider, ICustomerCommandProvider
     {
         private readonly string? _connectionString;
 

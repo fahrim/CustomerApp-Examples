@@ -5,24 +5,32 @@ using FluentValidation.Results;
 
 namespace CustomerApp.Controllers
 {
-    [Route("api/[controller]")] // Bu controller'a api/customer adresiyle erişilecek
+    // Bu controller'a api/customer adresiyle erişilecek
+    [Route("api/[controller]")]
     [ApiController]
     public class CustomerController : ControllerBase
     {
-        private readonly ICustomerProvider _customerProvider;
+        private readonly ICustomerQueryProvider _queryProvider;
+        private readonly ICustomerCommandProvider _commandProvider;
         private readonly IValidator<Customer> _updateValidator;
 
-        // Dependency Injection ile CustomerProvider'ı alıyotuz. (model binding gibi provider bind ediyoruz gibi düşün)
-        public CustomerController(ICustomerProvider customerProvider, IValidator<Customer> updateValidator) { 
-            _customerProvider = customerProvider;
+        // Dependency Injection constructor
+        public CustomerController(
+            ICustomerQueryProvider queryProvider,
+            ICustomerCommandProvider commandProvider,
+            IValidator<Customer> updateValidator) 
+        { 
+            _queryProvider = queryProvider;
+            _commandProvider = commandProvider;
             _updateValidator = updateValidator;
         }
 
+        // Metodun ANA SORUMLULUĞU OKUMAK'tır (Query)
         // GET: api/customer/5
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCustomerById(int id)
         {
-            var customer = await _customerProvider.GetCustomerByIdAsync(id);
+            var customer = await _queryProvider.GetCustomerByIdAsync(id);
 
             if (customer == null)
             {
@@ -34,9 +42,10 @@ namespace CustomerApp.Controllers
             return Ok(customer);
         }
 
+        // Metodun ANA SORUMLULUĞU YAZMAK'tır (Command), ancak iş akışını (workflow) tamamlamak için Okuma (Query) sağlayıcısını da kullanır.
         // POST: api/customer
         [HttpPost]
-        public async Task<IActionResult> CreateCustomer([FromBody] Customer newCustomer) // - FromBody öğren???
+        public async Task<IActionResult> CreateCustomer([FromBody] Customer newCustomer)
         {
             // # VALIDATIONS 1. Kontrol: ModelState (Model doğrulama)
             // ASP.NET Core, newCustomer nesnesini ve üzerindeki [Required] vb.
@@ -53,11 +62,11 @@ namespace CustomerApp.Controllers
             }
 
             // Provider aracılığıyla müşteriyi db ekle
-            int newCustomerId = await _customerProvider.InsertCustomerAsync(newCustomer);
+            int newCustomerId = await _commandProvider.InsertCustomerAsync(newCustomer);
 
             // Bu yeni ID'yi kullanarak veritabanından kaydın son halini
             // (CreatedAt ve IsActive dahil) tekrar çek.
-            var createdCustomer = await _customerProvider.GetCustomerByIdAsync(newCustomerId);
+            var createdCustomer = await _queryProvider.GetCustomerByIdAsync(newCustomerId);
 
             // Eğer bir nedenle kayıt bulunamazsa (çok düşük ihtimal ama olabilir)
             if (createdCustomer == null)
@@ -77,6 +86,8 @@ namespace CustomerApp.Controllers
             );
         }
 
+        // Metotun ANA SORUMLULUĞU GÜNCELLEMEK'tir (Command), ancak iş akışını (workflow) tamamlamak için Okuma (Query) sağlayıcısını da kullanır.
+        // PUT: api/customer/5
         [HttpPut("{id}")] // [HttpPost("update/{id}")]
         public async Task<IActionResult> UpdateCustomer(int id, [FromBody] Customer updateCustomer)
         {
@@ -103,14 +114,14 @@ namespace CustomerApp.Controllers
             }
 
             // 2. Doğrulama: Bu müşteri veritabanında var mı?
-            var existingCustomer = await _customerProvider.GetCustomerByIdAsync(id);
+            var existingCustomer = await _queryProvider.GetCustomerByIdAsync(id);
             if (existingCustomer == null)
             {
                 return NotFound($"ID'si {id} olan müşteri bulunamadı.");
             }
 
             // 3. Adım: Veritabanında güncelleme işlemini yap VE SONUCU YAKALA
-            var affectedRows = await _customerProvider.UpdateCustomerAsync(updateCustomer);
+            var affectedRows = await _commandProvider.UpdateCustomerAsync(updateCustomer);
 
             // 2. KONTROL (Güncelleme sonrası kontrol)
             if (affectedRows <= 0)
@@ -122,18 +133,20 @@ namespace CustomerApp.Controllers
             }
 
             // 4. Adım: Kullanıcıya verinin güncellenmiş son halini döndür.
-            var updatedCustomer = await _customerProvider.GetCustomerByIdAsync(id);
+            var updatedCustomer = await _queryProvider.GetCustomerByIdAsync(id);
 
             return Ok(updatedCustomer); // 200 OK ve güncellenmiş nesne
         }
 
 
+        // Metodun ANA SORUMLULUĞU SİLMEK'tir (Command)
+        // DELETE: api/customer/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCustomer(int id)
         {
             // Provider aracılığıyla müşteriyi pasif hale getir
             // ve etkilenen satır sayısını yakala
-            var affectedRows = await _customerProvider.DeactivateCustomerAsync(id);
+            var affectedRows = await _commandProvider.DeactivateCustomerAsync(id);
 
             // UPDATE'taki sağlam kontrolümüzü burada da kullanıyoruz:
             //if (affectedRows == 0)

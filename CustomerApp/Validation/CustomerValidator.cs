@@ -6,11 +6,12 @@ namespace CustomerApp.Validation
     public class CustomerValidator : AbstractValidator<Customer>
     {
 
-        private readonly ICustomerProvider _customerProvider;
+        private readonly ICustomerQueryProvider _queryProvider;
 
-        public CustomerValidator(ICustomerProvider customerProvider)
+        public CustomerValidator(ICustomerQueryProvider queryProvider, ICustomerCommandProvider commandProvider)
         {
-            _customerProvider = customerProvider; // Gelen provider'ı atadık
+            // Gelen providerlar'ı atadık (DI)
+            _queryProvider = queryProvider;
 
             // Müşteri Adı zorunlu ve en fazla 50 karakter
             RuleFor(customer => customer.FirstName)
@@ -61,7 +62,7 @@ namespace CustomerApp.Validation
             // e-postanın unique olup olmadığını KONTROL EDEBİLİRİZ.)
             RuleFor(customer => customer.Email)
                 .MustAsync(async (Customer customer, string email, CancellationToken cancellation) =>
-                    !await _customerProvider.IsEmailTakenAsync(email, customer.CustomerID))
+                    !await _queryProvider.IsEmailTakenAsync(email, customer.CustomerID))
                 .WithMessage("Bu e-posta adresi zaten başka bir kullanıcı tarafından kullanılıyor.");
 
 
@@ -77,7 +78,7 @@ namespace CustomerApp.Validation
         private async Task<bool> BeUniqueEmail(Customer customer, string email, CancellationToken cancellation)
         {
             // Provider'a sor
-            bool isTaken = await _customerProvider.IsEmailTakenAsync(email, customer.CustomerID);
+            bool isTaken = await _queryProvider.IsEmailTakenAsync(email, customer.CustomerID);
 
             // Kuralın BAŞARILI olması için e-postanın ALINMAMIŞ (isTaken == false) olması gerekir
             return !isTaken;
